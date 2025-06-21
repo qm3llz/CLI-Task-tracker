@@ -13,6 +13,8 @@ if not tasks_file.exists():
 
 
 def load_tasks() -> list:
+    if tasks_file.stat().st_size == 0:
+        return []
     with tasks_file.open("r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -22,7 +24,7 @@ def save_tasks(tasks: list):
         json.dump(tasks, f, indent=4)
 
 
-def genetare_new_id(tasks):
+def generate_new_id(tasks):
     if not tasks:
         return 1
     return max(task["id"] for task in tasks) + 1
@@ -30,7 +32,7 @@ def genetare_new_id(tasks):
 
 def add_task(description):
     tasks = load_tasks()
-    new_id = genetare_new_id(tasks)
+    new_id = generate_new_id(tasks)
     now = datetime.now().isoformat()
     new_task = {
         "id": new_id,
@@ -47,7 +49,7 @@ def add_task(description):
 def update_task(task_id, new_description):
     tasks = load_tasks()
     for task in tasks:
-        if task[id] == task_id:
+        if task["id"] == task_id:
             task["description"] = new_description
             task["updated"] = datetime.now().isoformat()
             save_tasks(tasks)
@@ -58,9 +60,12 @@ def update_task(task_id, new_description):
 
 def delete_task(task_id):
     tasks = load_tasks()
-    new_task = [task for task in tasks if task[id] != task_id]
+    new_task = [task for task in tasks if task["id"] != task_id]
     if len(tasks) == len(new_task):
         print(f"Task {task_id} not found")
+        return
+    save_tasks(new_task)
+    print(f"Task {task_id} deleted")
 
 
 def mark_task(task_id, new_status):
@@ -68,11 +73,11 @@ def mark_task(task_id, new_status):
         print("Invalid status. Use <task_tracker help>")
         return
     tasks = load_tasks()
-    for task in tasks():
+    for task in tasks:
         if task["id"] == task_id:
             task["status"] = new_status
             task["updated"] = datetime.now().isoformat()
-            save_tasks()
+            save_tasks(tasks)
             print(f"Task {task_id} marked as {new_status}")
             return
     print(f"Task {task_id} not found")
@@ -107,53 +112,71 @@ def main():
 
     command = sys.argv[1]
 
-    try:
-        if command == "add":
-            description = " ".join(sys.argv[2:]).strip()
-            if not description:
-                print("Enter a description")
-                return
-            add_task(description)
+    if command == "add":
+        description = " ".join(sys.argv[2:]).strip()
+        if not description:
+            print("Enter a description")
+            return
+        add_task(description)
 
-        elif command == "update":
-            task_id = int(sys.argv[2])
-            new_description = " ".join(sys.argv[3:]).strip()
-            if not description:
-                print("Enter a description")
-                return
-            update_task(task_id, new_description)
-
-        elif command == "delete":
-            task_id = int(sys.argv[2])
-            delete_task(task_id)
-
-        elif command == "mark-in-progress":
-            task_id = int(sys.argv[2])
-            mark_task(task_id, "in-progress")
-
-        elif command == "mark-done":
-            task_id = int(sys.argv[2])
-            mark_task(task_id, "done")
-
-        elif command == "list":
-            if len(sys.argv) == 3:
-                status = sys.argv[2]
-                if status not in ["todo", "in-progress", "done"]:
-                    print("Status must be one of: todo, in-progress, done")
-                    return
-                list_tasks(status)
-            else:
-                list_tasks()
-
-        else:
-            print("Unknown command")
+    elif command == "update":
+        if len(sys.argv) < 4:
+            print("Missing arguments for update.")
             usage()
+            return
+        try:
+            task_id = int(sys.argv[2])
+        except ValueError:
+            print("Invalid task ID. It must be an integer.")
+            return
+        new_description = " ".join(sys.argv[3:]).strip()
+        if not new_description:
+            print("Enter a description")
+            return
+        update_task(task_id, new_description)
 
-    except IndexError:
-        print("Missing arguments for the command.")
+    elif command == "delete":
+        if len(sys.argv) < 3:
+            print("Missing task ID.")
+            return
+        try:
+            task_id = int(sys.argv[2])
+        except ValueError:
+            print("Invalid task ID. It must be an integer.")
+            return
+        delete_task(task_id)
+
+    elif command == "mark-in-progress":
+        try:
+            task_id = int(sys.argv[2])
+        except ValueError:
+            print("Invalid task ID. It must be an integer.")
+            return
+        mark_task(task_id, "in-progress")
+
+    elif command == "mark-done":
+        try:
+            task_id = int(sys.argv[2])
+        except ValueError:
+            print("Invalid task ID. It must be an integer.")
+            return
+        mark_task(task_id, "done")
+
+    elif command == "list":
+        if len(sys.argv) == 3:
+            status = sys.argv[2]
+            if status not in ["todo", "in-progress", "done"]:
+                print("Status must be one of: todo, in-progress, done")
+                return
+            list_tasks(status)
+        else:
+            list_tasks()
+
+    elif command == "help":
         usage()
-    except ValueError:
-        print("Invalid task ID. It must be an integer.")
+
+    else:
+        print("Unknown command")
         usage()
 
 
