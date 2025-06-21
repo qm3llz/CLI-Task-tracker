@@ -20,5 +20,3 @@ Make sure you have Python 3.6 or higher installed.
 git clone https://github.com/your-username/task-tracker-cli.git
 cd task-tracker-cli
 python task_cli.py help
-
-
