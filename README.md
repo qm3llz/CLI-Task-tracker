@@ -17,6 +17,6 @@ Task Tracker CLI is a simple command-line application to manage your tasks. It a
 Make sure you have Python 3.6 or higher installed.
 
 ```bash
-git clone https://github.com/your-username/task-tracker-cli.git
+git clone https://github.com/qm3llz/task-tracker-cli.git
 cd task-tracker-cli
 python task_cli.py help
